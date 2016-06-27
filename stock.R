@@ -85,6 +85,7 @@ drawHLine(50)
 drawHLine(90)
 
 qplot(factor(RoundPE), data=stocks1, geom = "bar", xlab = "PE")
+qplot(m, Rise, data=by.month, geom="boxplot", fill=m)
 
 rollingCumper <- numeric()
 for(i in 1:1200)
