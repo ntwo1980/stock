@@ -1,13 +1,20 @@
 initEnvironment <- function()
 {
-  options(digits=2)
-  library(ggplot2)
+  library("ggplot2")
+  library("zoo")
 }
 
 loadData <- function(file)
 {
-  data = stocks = read.table(file, header= TRUE, sep=",", stringsAsFactors = FALSE, colClasses=c("factor", "NULL", "character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "NULL", "NULL", "NULL", "NULL", "NULL", "numeric" ), col.names=c("Code", "Name", "Date", "Open", "High", "Low", "Close", "Volumn", "Amount", "Change", "Turnover", "PE", "PB", "Average", "AmountPercentage", "HQLTSZ", "AHQLTSZ", "Payout", "IR"))
+  data = read.table(file, header= TRUE, sep=",", stringsAsFactors = FALSE, colClasses=c("factor", "NULL", "character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "NULL", "NULL", "NULL", "NULL", "NULL", "numeric" ), col.names=c("Code", "Name", "Date", "Open", "High", "Low", "Close", "Volumn", "Amount", "Change", "Turnover", "PE", "PB", "Average", "AmountPercentage", "HQLTSZ", "AHQLTSZ", "Payout", "IR"))
   
+  return(data)
+}
+
+loadZooData <- function(file)
+{
+  data <- read.zoo("8018131.csv", sep=",", head=TRUE, index.column = 1, format="%Y-%m-%d", colClasses=c("NULL","NULL","character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "NULL", "NULL", "NULL", "NULL", "NULL", "numeric"))
+ 
   return(data)
 }
 
@@ -48,6 +55,19 @@ drawHLine <- function(per)
   abline(h = as.integer(a1[index, 1]))
 }
 
+getTodayStat <- function(x)
+{
+  percentileFunc <- ecdf(x$PE)
+
+  todayPE <- as.numeric(x$PE[1])
+  cat("Today PE:", todayPE, "Percentile:", 1 - percentileFunc(todayPE) , "\n")
+  cat("\n") 
+  cat("percentile: \n")
+  percentile <- c(0.1, 0.2, 0.4, 0.5, 0.6)
+  cat(sprintf("%5.0f%%", 100 * (1 - percentile)), "\n")
+  cat(quantile(x$PE, percentile, names = FALSE))
+}
+
 initEnvironment()
 stocks = loadData("801813.csv")
 
@@ -61,19 +81,21 @@ stocks2 <- stocks[1:480,]
 stocks3 <- stocks[1:720,]
 stocks5 <- stocks[1:1200,]
 
-a1 <- analyseStock(stocks1)
-a2 <- analyseStock(stocks2)
-a3 <- analyseStock(stocks3)
-a5 <- analyseStock(stocks5)
+getTodayStat(stocks1)
 
-todayPE <- as.integer(stocks$PE[1])
+# a1 <- analyseStock(stocks1)
+# a2 <- analyseStock(stocks2)
+# a3 <- analyseStock(stocks3)
+# a5 <- analyseStock(stocks5)
 
-cumper1 <- as.integer(a1[a1$PE==todayPE, c("cumper")])
-cumper2 <- as.integer(a2[a2$PE==todayPE, c("cumper")])
-cumper3 <- as.integer(a3[a3$PE==todayPE, c("cumper")])
-cumper5 <- as.integer(a5[a5$PE==todayPE, c("cumper")])
+# todayPE <- as.integer(stocks$PE[1])
+# 
+# cumper1 <- as.integer(a1[a1$PE==todayPE, c("cumper")])
+# cumper2 <- as.integer(a2[a2$PE==todayPE, c("cumper")])
+# cumper3 <- as.integer(a3[a3$PE==todayPE, c("cumper")])
+# cumper5 <- as.integer(a5[a5$PE==todayPE, c("cumper")])
 
-cat("Today PE:", todayPE, "cumper1:", cumper1, "\b% cumper2:", cumper2, "\b% cumper3:", cumper3, "\b% cumper5:", cumper5, "\b%")
+# cat("Today PE:", todayPE, "cumper1:", cumper1, "\b% cumper2:", cumper2, "\b% cumper3:", cumper3, "\b% cumper5:", cumper5, "\b%")
 
 by.month <- analyseByMonth(stocks)
 # by(by.month$Rise, by.month$m, function(x) length(x[x > 0]) / length(x))
@@ -87,14 +109,14 @@ drawHLine(90)
 qplot(factor(RoundPE), data=stocks1, geom = "bar", xlab = "PE")
 qplot(m, Rise, data=by.month, geom="boxplot", fill=m)
 
-rollingCumper <- numeric()
-for(i in 1:1200)
-{
-  endIndex <- i+239
-  rollingStock <- stocks[i:endIndex,]
-  rollingPE <- as.integer(rollingStock$RoundPE[1])
-  rollingA1 <- analyseStock(rollingStock)
-  rollingCumper[i] <- rollingA1[rollingA1$PE == rollingPE,"cumper"]
-}
-
-stocks5$rollingCumper <- rollingCumper
+# rollingCumper <- numeric()
+# for(i in 1:1200)
+# {
+#   endIndex <- i+239
+#   rollingStock <- stocks[i:endIndex,]
+#   rollingPE <- as.integer(rollingStock$RoundPE[1])
+#   rollingA1 <- analyseStock(rollingStock)
+#   rollingCumper[i] <- rollingA1[rollingA1$PE == rollingPE,"cumper"]
+# }
+# 
+# stocks5$rollingCumper <- rollingCumper
