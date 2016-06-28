@@ -1,5 +1,6 @@
 initEnvironment <- function()
 {
+  setwd("C:/Users/nn1003/Documents/R/stock")
   library("ggplot2")
   library("zoo")
 }
@@ -13,7 +14,7 @@ loadData <- function(file)
 
 loadZooData <- function(file)
 {
-  data <- read.zoo("8018131.csv", sep=",", head=TRUE, index.column = 1, format="%Y-%m-%d", colClasses=c("NULL","NULL","character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "NULL", "NULL", "NULL", "NULL", "NULL", "numeric"))
+  data <- read.zoo("./8018131.csv", sep=",", head=TRUE, index.column = 1, format="%Y-%m-%d", colClasses=c("NULL","NULL","character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "NULL", "NULL", "NULL", "NULL", "NULL", "numeric"))
  
   return(data)
 }
@@ -49,10 +50,12 @@ getMonthData <- function(x)
   return(subset(by.month, m == x))
 }
 
-drawHLine <- function(per)
+drawHLine <- function(x, percentile)
 {
-  index <- which(a1$cumper <= per)[1]
-  abline(h = as.integer(a1[index, 1]))
+  # index <- which(a1$cumper <= per)[1]
+  PE = quantile(x$PE, 1 - percentile, names = FALSE)
+  # abline(h = as.integer(a1[index, 1]))
+  abline(h = PE)
 }
 
 getTodayStat <- function(x)
@@ -101,10 +104,10 @@ by.month <- analyseByMonth(stocks)
 # by(by.month$Rise, by.month$m, function(x) length(x[x > 0]) / length(x))
 
 plot(rev(stocks2$PE), type="l")
-drawHLine(40)
-drawHLine(50)
+drawHLine(stocks1, 0.4)
+drawHLine(stocks1, 0.5)
 #drawHLine(60)
-drawHLine(90)
+drawHLine(stocks1, 0.9)
 
 qplot(factor(RoundPE), data=stocks1, geom = "bar", xlab = "PE")
 qplot(m, Rise, data=by.month, geom="boxplot", fill=m)
