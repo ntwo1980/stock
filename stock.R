@@ -12,7 +12,7 @@ loadData <- function(file)
   return(data)
 }
 
-loadZooData <- function(file)
+loadZooData <- function()
 {
   data <- read.zoo("./8018131.csv", sep=",", head=TRUE, index.column = 1, format="%Y-%m-%d", colClasses=c("NULL","NULL","character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "NULL", "NULL", "NULL", "NULL", "NULL", "numeric"))
  
@@ -33,14 +33,14 @@ analyseStock <- function(x)
 
 analyseByMonth <- function(x)
 {
-  by.month.open <- aggregate(stocks["Open"], by=list(Month=stocks$Month), FUN = function(x) x[length(x)])
-  by.month.close <- aggregate(stocks["Close"], by=list(Month=stocks$Month), FUN = function(x) x[1])
+  by.month.open <- aggregate(x["Open"], by=list(Month=x$Month), FUN = function(x) x[length(x)])
+  by.month.close <- aggregate(x["Close"], by=list(Month=x$Month), FUN = function(x) x[1])
   by.month <- cbind(by.month.open, Close = by.month.close$Close)
-  by.month <- cbind(by.month, m = substring(by.month$Month, 6))
+  by.month <- cbind(by.month, m = as.integer(substring(by.month$Month, 6)))
   by.month <- cbind(by.month, Rise = (by.month$Close - by.month$Open) * 100 / by.month$Open )
   
   # subset(by.month, m == 7)
-  return (by.month)
+  return(by.month[order(as.yearmon(by.month$Month)),])
 }
 
 getMonthData <- function(x)
@@ -110,7 +110,7 @@ drawHLine(stocks1, 0.5)
 drawHLine(stocks1, 0.9)
 
 qplot(factor(RoundPE), data=stocks1, geom = "bar", xlab = "PE")
-qplot(m, Rise, data=by.month, geom="boxplot", fill=m)
+qplot(as.factor(m), Rise, data=by.month, geom="boxplot", xlab = "Month")
 
 # rollingCumper <- numeric()
 # for(i in 1:1200)
