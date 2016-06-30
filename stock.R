@@ -104,6 +104,7 @@ by.month <- analyseByMonth(stocks)
 # by(by.month$Rise, by.month$m, function(x) length(x[x > 0]) / length(x))
 
 plot(rev(stocks2$PE), type="l")
+grid(NA, NULL)
 drawHLine(stocks1, 0.4)
 drawHLine(stocks1, 0.5)
 #drawHLine(60)
