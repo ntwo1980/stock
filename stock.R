@@ -3,6 +3,8 @@ initEnvironment <- function()
   setwd("C:/Users/nn1003/Documents/R/stock")
   library("ggplot2")
   library("zoo")
+  library("quantmod")
+  library("dplyr")
 }
 
 loadData <- function(file)
@@ -40,14 +42,15 @@ analyseByMonth <- function(x)
   by.month <- cbind(by.month, Rise = (by.month$Close - by.month$Open) * 100 / by.month$Open )
   
   # subset(by.month, m == 7)
-  return(by.month[order(as.yearmon(by.month$Month)),])
+  return(arrange(by.month, as.yearmon(Month)))
+  #return(by.month[order(as.yearmon(by.month$Month)),])
 }
 
 getMonthData <- function(x)
 {
   by.month <- analyseByMonth(stocks)
   
-  return(subset(by.month, m == x))
+  return(filter(by.month, m == x))
 }
 
 drawHLine <- function(x, percentile)
@@ -69,6 +72,8 @@ getTodayStat <- function(x)
   percentile <- c(0.1, 0.2, 0.4, 0.5, 0.6)
   cat(sprintf("%5.0f%%", 100 * (1 - percentile)), "\n")
   cat(quantile(x$PE, percentile, names = FALSE))
+  
+  return(todayPE)
 }
 
 initEnvironment()
@@ -84,7 +89,7 @@ stocks2 <- stocks[1:480,]
 stocks3 <- stocks[1:720,]
 stocks5 <- stocks[1:1200,]
 
-getTodayStat(stocks1)
+todayPE <- getTodayStat(stocks1)
 
 # a1 <- analyseStock(stocks1)
 # a2 <- analyseStock(stocks2)
@@ -103,15 +108,23 @@ getTodayStat(stocks1)
 by.month <- analyseByMonth(stocks)
 # by(by.month$Rise, by.month$m, function(x) length(x[x > 0]) / length(x))
 
-plot(rev(stocks2$PE), type="l")
+plot(rev(stocks1$PE), type="l", xlab="Date", ylab="PE")
 grid(NA, NULL)
+drawHLine(stocks1, 0.1)
+drawHLine(stocks1, 0.2)
+drawHLine(stocks1, 0.3)
 drawHLine(stocks1, 0.4)
 drawHLine(stocks1, 0.5)
+drawHLine(stocks1, 0.6)
+drawHLine(stocks1, 0.7)
 #drawHLine(60)
-drawHLine(stocks1, 0.9)
+drawHLine(stocks1, 0.8)
 
 qplot(factor(RoundPE), data=stocks1, geom = "bar", xlab = "PE")
 qplot(as.factor(m), Rise, data=by.month, geom="boxplot", xlab = "Month")
+
+plot(density(stocks1$PE), lwd = 3)
+abline(v = todayPE)
 
 # rollingCumper <- numeric()
 # for(i in 1:1200)
