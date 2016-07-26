@@ -8,12 +8,33 @@ init.environment <- function()
   library("lubridate")
 }
 
+one.year.percenctile <- function(x)
+{
+  percentiles = c()
+  
+  for (i in 1:length(x)) {
+    if(i < 240) {
+      percentiles[i] <- NA
+    } else {
+      current <- as.numeric(x[i]) 
+      start <- i+1-240
+      end <- i
+      percentile.func <- ecdf(as.numeric(x[start:end]))
+      current.percentile <- round(1 - percentile.func(current),2)
+      percentiles[i] <- current.percentile
+    }
+  }
+  
+  return(percentiles)
+}
+
 load.data.df <- function(file)
 {
   data <- read.table(file, header= TRUE, sep=",", stringsAsFactors = FALSE, colClasses=c("factor", "NULL", "character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "NULL", "NULL", "NULL", "NULL", "NULL", "numeric" ), col.names=c("Code", "Name", "Date", "Open", "High", "Low", "Close", "Volumn", "Amount", "Change", "Turnover", "PE", "PB", "Average", "AmountPercentage", "HQLTSZ", "AHQLTSZ", "Payout", "IR"))
   data <- subset(data, select=c(Date, Open, Close, High, Low, Volumn, PE, PB))
   returns <- -round(c(diff(data$Close), NA) / data$Close, 4) * 100
   reversed.Close = rev(data$Close)
+  reversed.PE = rev(data$PE)
   y <- year(data$Date)
   m <- month(data$Date)
   wd <- wday(data$Date) - 1 
@@ -21,8 +42,11 @@ load.data.df <- function(file)
   ma10 <- SMA(reversed.Close, 10)
   ma20 <- SMA(reversed.Close, 20)
   ma30 <- SMA(reversed.Close, 30)
+  close.percentile <- one.year.percenctile(reversed.Close)
+  pe.percentile <- one.year.percenctile(reversed.PE)
   data <- cbind(data, Returns = returns, Year = y, Month = m, Week = wd, Day = md, MA10 = rev(ma10), MA20 = rev(ma20), MA30 = rev(ma30))
   data <- cbind(data, PrevClose = lead(data$Close), PrevMA10 = lead(data$MA10), PrevMA20 = lead(data$MA20), PrevMA30 = lead(data$MA30))
+  data <- cbind(data, ClosePercentile = rev(close.percentile), PEPercentile = rev(pe.percentile))
   rownames(data) <- data[[1]]
   data$Date <- NULL
   
@@ -59,12 +83,10 @@ monthly.returns <- cbind(monthly.returns, Month = month(index(monthly.returns)))
 qplot(as.factor(Month), Returns, data=monthly.returns, geom="boxplot", xlab = "Month")
 qplot(as.factor(Week), Returns, data=stocks.whole, geom="boxplot", xlab = "Week")
 
-todayClose <- as.numeric(stocks$Close[length(stocks$Close)])
-percentileCloseFunc <- ecdf(as.numeric(stocks$Close))
-todayClosePercentile <- round(1 - percentileCloseFunc(todayClose),2)
-todayPE <- as.numeric(stocks$PE[length(stocks$PE)])
-percentilePEFunc <- ecdf(as.numeric(stocks$PE[]))
-todayPEPercentile <- round(1 - percentilePEFunc(todayPE),2)
+todayClose <- last(stocks$Close)
+todayClosePercentile <- last(stocks$ClosePercentile)
+todayPE <- last(stocks$PE)
+todayPEPercentile <- last(stocks$PEPercentile)
 
 # par(mfrow = c(2, 2))
 # current.PE = stocks$PE[1]
