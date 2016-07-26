@@ -20,8 +20,9 @@ load.data.df <- function(file)
   md <- mday(data$Date)
   ma10 <- SMA(reversed.Close, 10)
   ma20 <- SMA(reversed.Close, 20)
-  data <- cbind(data, Returns = returns, Year = y, Month = m, Week = wd, Day = md, MA10 = rev(ma10), MA20 = rev(ma20))
-  data <- cbind(data, PrevClose = lead(data$Close), PrevMA10 = lead(data$MA10), PrevMA20 = lead(data$MA20))
+  ma30 <- SMA(reversed.Close, 30)
+  data <- cbind(data, Returns = returns, Year = y, Month = m, Week = wd, Day = md, MA10 = rev(ma10), MA20 = rev(ma20), MA30 = rev(ma30))
+  data <- cbind(data, PrevClose = lead(data$Close), PrevMA10 = lead(data$MA10), PrevMA20 = lead(data$MA20), PrevMA30 = lead(data$MA30))
   rownames(data) <- data[[1]]
   data$Date <- NULL
   
@@ -38,16 +39,13 @@ plot_stocks <- function(data, title)
 
 get.data.year <- function(data, year)
 {
-  return(data[1: 240*year,])
+  days <- 240 * year
+  return(data[1: days,])
 }
 
 init.environment()
 stocks.whole.df <- load.data.df("801813.csv")
 stocks.whole <- as.xts(stocks.whole.df[!is.na(stocks.whole.df$Returns),])
-# ma10 <- SMA(stocks.whole$Close, 10)
-# ma20 <- SMA(stocks.whole$Close, 20)
-# stocks.whole <- cbind(stocks.whole, c(MA10 = ma10))
-# stocks.whole <- cbind(stocks.whole, c(MA20 = ma20))
 stocks1 <- as.xts(get.data.year(stocks.whole.df, 1))
 stocks2 <- as.xts(get.data.year(stocks.whole.df, 2))
 stocks3 <- as.xts(get.data.year(stocks.whole.df, 3))
@@ -85,9 +83,9 @@ grid()
 boxplot(Returns ~ Week, data=stocks.whole, na.rm = TRUE, xlab = "Week")
 grid()
 plot(stocks$Close, type = "l", ylab = "Close", main = paste("current=", todayClose, " Percentile=", todayClosePercentile, sep=""))
-abline(h = quantile(stocks$Close, c(1 - 0.8, 1-0.4), names = FALSE))
+abline(h = quantile(stocks$Close, c(1 - 0.8, 1-0.4, 1-0.2), names = FALSE))
 plot(stocks$PE, type = "l", ylab = "PE", main = paste("current=", todayPE, " Percentile=", todayPEPercentile, sep=""))
-abline(h = quantile(stocks$PE, c(1 - 0.8, 1-0.4), names = FALSE))
+abline(h = quantile(stocks$PE, c(1 - 0.8, 1-0.4, 1-0.2), names = FALSE))
 
 plot(density(stocks$Close), lwd = 3)
 abline(v = todayClose)
@@ -116,18 +114,35 @@ par(mfrow = c(1, 1))
 down.ma10 <- stocks.whole[which(stocks.whole$Close < stocks.whole$MA10 & stocks.whole$PrevClose >= stocks.whole$PrevMA10),]
 up.ma10 <- stocks.whole[which(stocks.whole$Close >= stocks.whole$MA10 & stocks.whole$PrevClose < stocks.whole$PrevMA10),]
 down.up.ma10 <- rbind(down.ma10, up.ma10)
-down.up.ma10.diff <- diff(index(down.up.ma10))
-steps <- seq(1, length(down.up.ma10.diff), 2)
-down.up.ma10.diff <- down.up.ma10.diff[steps]
-down.up.ma10.table <- cumsum(prop.table(table(down.up.ma10.diff)))
+down.up.ma10.day.diff <- diff(index(down.up.ma10))
+down.up.ma10.close.diff <- diff(down.up.ma10$Close)
+steps <- seq(2, length(down.up.ma10.day.diff), 2)
+down.up.ma10.day.diff <- down.up.ma10.day.diff[steps]
+down.up.ma10.close.diff <- down.up.ma10.close.diff[steps]
+down.up.ma10.day.table <- prop.table(table(down.up.ma10.day.diff))
+down.up.ma10.close.table <- prop.table(table(down.up.ma10.close.diff))
 
 down.ma20 <- stocks.whole[which(stocks.whole$Close < stocks.whole$MA20 & stocks.whole$PrevClose >= stocks.whole$PrevMA20),]
 up.ma20 <- stocks.whole[which(stocks.whole$Close >= stocks.whole$MA20 & stocks.whole$PrevClose < stocks.whole$PrevMA20),]
 down.up.ma20 <- rbind(down.ma20, up.ma20)
-down.up.ma20.diff <- diff(index(down.up.ma20))
-steps <- seq(1, length(down.up.ma20.diff), 2)
-down.up.ma20.diff <- down.up.ma20.diff[steps]
-down.up.ma20.table <- cumsum(prop.table(table(down.up.ma20.diff)))
+down.up.ma20.day.diff <- diff(index(down.up.ma20))
+down.up.ma20.close.diff <- diff(down.up.ma20$Close)
+steps <- seq(2, length(down.up.ma20.day.diff), 2)
+down.up.ma20.day.diff <- down.up.ma20.day.diff[steps]
+down.up.ma20.close.diff <- down.up.ma20.close.diff[steps]
+down.up.ma20.day.table <- prop.table(table(down.up.ma20.day.diff))
+down.up.ma20.close.table <- prop.table(table(down.up.ma20.close.diff))
+
+down.ma30 <- stocks.whole[which(stocks.whole$Close < stocks.whole$MA30 & stocks.whole$PrevClose >= stocks.whole$PrevMA30),]
+up.ma30 <- stocks.whole[which(stocks.whole$Close >= stocks.whole$MA30 & stocks.whole$PrevClose < stocks.whole$PrevMA30),]
+down.up.ma30 <- rbind(down.ma30, up.ma30)
+down.up.ma30.day.diff <- diff(index(down.up.ma30))
+down.up.ma30.close.diff <- diff(down.up.ma30$Close)
+steps <- seq(2, length(down.up.ma30.day.diff), 2)
+down.up.ma30.day.diff <- down.up.ma30.day.diff[steps]
+down.up.ma30.close.diff <- down.up.ma30.close.diff[steps]
+down.up.ma30.day.table <- prop.table(table(down.up.ma30.day.diff))
+down.up.ma30.close.table <- prop.table(table(down.up.ma30.close.diff))
 # mu<-mean(returns, na.rm=T)
 # sigma<-sd(returns, na.rm=T)
 # par(mfrow = c(1, 2))
