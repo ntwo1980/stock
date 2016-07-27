@@ -51,6 +51,29 @@ two.week.breakdown <- function(x)
   return(breakdown)
 }
 
+two.week.breakup <- function(x)
+{
+  breakup = c()
+  
+  for (i in 1:length(x)) {
+    if(i < 14) {
+      breakup[i] <- NA
+    } else {
+      week1start <- i+1-14
+      week2start <- i+1-7
+      week1max <- max(x[week1start:week2start])
+      week2max <- max(x[week2start:i])
+      
+      if(week2max <= week1max)
+        breakup[i] = FALSE
+      else
+        breakup[i] = TRUE
+    }
+  }
+  
+  return(breakup)
+}
+
 load.data.df <- function(file)
 {
   data <- read.table(file, header= TRUE, sep=",", stringsAsFactors = FALSE, colClasses=c("factor", "NULL", "character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "NULL", "NULL", "NULL", "NULL", "NULL", "numeric" ), col.names=c("Code", "Name", "Date", "Open", "High", "Low", "Close", "Volumn", "Amount", "Change", "Turnover", "PE", "PB", "Average", "AmountPercentage", "HQLTSZ", "AHQLTSZ", "Payout", "IR"))
@@ -59,6 +82,7 @@ load.data.df <- function(file)
   reversed.Close = rev(data$Close)
   reversed.PE = rev(data$PE)
   reversed.Low = rev(data$Low)
+  reversed.High = rev(data$High)
   y <- year(data$Date)
   m <- month(data$Date)
   wd <- wday(data$Date) - 1 
@@ -68,10 +92,11 @@ load.data.df <- function(file)
   ma30 <- SMA(reversed.Close, 30)
   close.percentile <- one.year.percenctile(reversed.Close)
   pe.percentile <- one.year.percenctile(reversed.PE)
-  two.week.low.breakdown <- two.week.breakdown(reversed.Low)
+  two.week.breakdown <- two.week.breakdown(reversed.Low)
+  two.week.breakup <- two.week.breakup(reversed.High)
   data <- cbind(data, Returns = returns, Year = y, Month = m, Week = wd, Day = md, MA10 = rev(ma10), MA20 = rev(ma20), MA30 = rev(ma30))
   data <- cbind(data, PrevClose = lead(data$Close), PrevMA10 = lead(data$MA10), PrevMA20 = lead(data$MA20), PrevMA30 = lead(data$MA30))
-  data <- cbind(data, ClosePercentile = rev(close.percentile), PEPercentile = rev(pe.percentile), Breakdown = rev(two.week.low.breakdown))
+  data <- cbind(data, ClosePercentile = rev(close.percentile), PEPercentile = rev(pe.percentile), Breakdown = rev(two.week.breakdown), Breakup = rev(two.week.breakup))
   rownames(data) <- data[[1]]
   data$Date <- NULL
   
