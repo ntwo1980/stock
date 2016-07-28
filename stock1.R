@@ -20,7 +20,7 @@ one.year.percenctile <- function(x)
       start <- i+1-240
       end <- i
       percentile.func <- ecdf(as.numeric(x[start:end]))
-      current.percentile <- round(1 - percentile.func(current),2)
+      current.percentile <- round(percentile.func(current),2)
       percentiles[i] <- current.percentile
     }
   }
@@ -33,11 +33,11 @@ two.week.breakdown <- function(x)
   breakdown = c()
   
   for (i in 1:length(x)) {
-    if(i < 10) {
+    if(i < 14) {
       breakdown[i] <- NA
     } else {
-      week1start <- i+1-10
-      week2start <- i+1-5
+      week1start <- i+1-14
+      week2start <- i+1-7
       week1min <- min(x[week1start:week2start])
       week2min <- min(x[week2start:i])
       
@@ -74,6 +74,11 @@ two.week.breakup <- function(x)
   return(breakup)
 }
 
+a <- function(x)
+{
+  return (subset(x, select=c(Close,PE, PB, Returns, ClosePercentile, PEPercentile, VolumnPercentile, AmplitudePercentile, Breakdown, Breakup)))
+}
+
 load.data.df <- function(file)
 {
   data <- read.table(file, header= TRUE, sep=",", stringsAsFactors = FALSE, colClasses=c("factor", "NULL", "character", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "NULL", "NULL", "NULL", "NULL", "NULL", "numeric" ), col.names=c("Code", "Name", "Date", "Open", "High", "Low", "Close", "Volumn", "Amount", "Change", "Turnover", "PE", "PB", "Average", "AmountPercentage", "HQLTSZ", "AHQLTSZ", "Payout", "IR"))
@@ -84,6 +89,7 @@ load.data.df <- function(file)
   reversed.Low = rev(data$Low)
   reversed.High = rev(data$High)
   reversed.Volumn = rev(data$Volumn)
+  reversed.Amplitude = rev((data$High - data$Low) / data$Close)
   y <- year(data$Date)
   m <- month(data$Date)
   wd <- wday(data$Date) - 1 
@@ -94,11 +100,12 @@ load.data.df <- function(file)
   close.percentile <- one.year.percenctile(reversed.Close)
   pe.percentile <- one.year.percenctile(reversed.PE)
   volumn.percentile <- one.year.percenctile(reversed.Volumn)
+  amplitude.percentile <- one.year.percenctile(reversed.Amplitude)
   two.week.breakdown <- two.week.breakdown(reversed.Low)
   two.week.breakup <- two.week.breakup(reversed.High)
   data <- cbind(data, Returns = returns, Year = y, Month = m, Week = wd, Day = md, MA10 = rev(ma10), MA20 = rev(ma20), MA30 = rev(ma30))
   data <- cbind(data, PrevClose = lead(data$Close), PrevMA10 = lead(data$MA10), PrevMA20 = lead(data$MA20), PrevMA30 = lead(data$MA30))
-  data <- cbind(data, ClosePercentile = rev(close.percentile), PEPercentile = rev(pe.percentile), VolumnPercentile = rev(volumn.percentile), Breakdown = rev(two.week.breakdown), Breakup = rev(two.week.breakup))
+  data <- cbind(data, ClosePercentile = rev(close.percentile), PEPercentile = rev(pe.percentile), VolumnPercentile = rev(volumn.percentile), AmplitudePercentile = rev(amplitude.percentile), Breakdown = rev(two.week.breakdown), Breakup = rev(two.week.breakup))
   rownames(data) <- data[[1]]
   data$Date <- NULL
   
